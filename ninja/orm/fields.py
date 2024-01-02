@@ -1,6 +1,17 @@
 import datetime
 from decimal import Decimal
-from typing import Any, Callable, Dict, List, Tuple, Type, TypeVar, Union, no_type_check
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    no_type_check,
+)
 from uuid import UUID
 
 from django.db.models import Choices, ManyToManyField
@@ -106,7 +117,11 @@ def create_m2m_link_type(type_: Type[TModel]) -> Type[TModel]:
 
 @no_type_check
 def get_schema_field(
-    field: DjangoField, *, depth: int = 0, optional: bool = False
+    field: DjangoField,
+    *,
+    depth: int = 0,
+    optional: bool = False,
+    choices_exclude: Optional[List[str]] = None,
 ) -> Tuple:
     "Returns pydantic field from django's model field"
     alias = None
@@ -116,6 +131,7 @@ def get_schema_field(
     title = None
     max_length = None
     python_type = None
+    choices_exclude = choices_exclude or []
 
     if field.is_relation:
         if depth > 0:
@@ -142,7 +158,7 @@ def get_schema_field(
         max_length = field_options.get("max_length")
         choices = field_options.get("choices")
 
-        if not choices:
+        if not choices or _f_name in choices_exclude:
             internal_type = field.get_internal_type()
             python_type = TYPES[internal_type]
         else:
